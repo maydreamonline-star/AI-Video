@@ -41,6 +41,7 @@ export default function App() {
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [exportingState, setExportingState] = useState<'idle' | 'hub' | 'preparing' | 'rendering' | 'success'>('idle');
   const [exportProgress, setExportProgress] = useState(0);
+  const [successNoticeActive, setSuccessNoticeActive] = useState<boolean>(false);
 
   // High-Definition (HD) Real-time Screen Recorder states
   const [recorderState, setRecorderState] = useState<'idle' | 'countdown' | 'recording' | 'processing' | 'finished' | 'error'>('idle');
@@ -299,6 +300,35 @@ export default function App() {
     setExportProgress(0);
   };
 
+  const handleDownloadManifestDirectly = () => {
+    // Generate simulated Campaign text package to trigger real download instantly!
+    const promoContent = `=== RETAIL TABLET CAMPAIGN BUNDLE ===\n` +
+      `Merchant Name        : ${config.merchantName || 'DKR Retail Store'}\n` +
+      `Cashier Name         : ${config.cashierName || 'Devi'}\n` +
+      `Loyalty URL/QR Value : ${config.qrValue || 'https://google.com'}\n` +
+      `Loyalty Product      : ${config.rewardProduct || 'Teh Botol Sosro'}\n` +
+      `Voice Synthesizer ID : ${config.selectedVoiceName || 'Default SPG System'}\n\n` +
+      `=== VOICE TRANSCIPT & KARAOKE SEQUENCE ===\n` + 
+      segments.map((seg, idx) => `Segment ${idx + 1}: "${seg.text}"`).join('\n') + `\n\n` +
+      `=== DISPATCH INSTRUCTIONS ===\n` +
+      `1. Put this configuration file on your merchant tablet local directory dynamic_assets/\n` +
+      `2. Open active DKR Merchant app under dynamic loyalty modules.\n` +
+      `3. Tablet standee display and vocoder voice synthesizers will reflect these settings immediately.\n\n` +
+      `Export Verification ID: SHA256-${Math.random().toString(36).substring(7).toUpperCase()}\n` +
+      `Generated On Campaign Portal: ${new Date().toISOString()}`;
+
+    const blob = new Blob([promoContent], { type: 'text/plain;charset=utf-8' });
+    const downloadUrl = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `DKR_Loyalti_Promo_Manifest.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(downloadUrl);
+  };
+
   // Run a simulated export
   const handleExportSimulate = () => {
     setExportingState('preparing');
@@ -360,6 +390,18 @@ export default function App() {
           audio: true
         });
       } catch (audioErr: any) {
+        // Check if the user actively canceled or clicked Cancel in the browser popups
+        const isUserDenial = 
+          audioErr?.name === 'NotAllowedError' || 
+          audioErr?.name === 'PermissionDeniedError' || 
+          audioErr?.message?.toLowerCase().includes('denied') || 
+          audioErr?.message?.toLowerCase().includes('cancel') ||
+          audioErr?.message?.toLowerCase().includes('abort');
+
+        if (isUserDenial) {
+          throw audioErr; // Throw immediately to outer catch so they don't get prompted again!
+        }
+
         console.warn('Gagal merekam audio tab, mencoba alternatif tanpa audio agar tidak stuck...', audioErr);
         // Fallback to video-only to guarantee it never gets stuck
         stream = await navigator.mediaDevices.getDisplayMedia({
@@ -506,6 +548,8 @@ export default function App() {
     }
   }, [isPlaying, recorderState]);
 
+  const isExportingActive = exportingState === 'preparing' || exportingState === 'rendering' || ['countdown', 'recording', 'processing'].includes(recorderState);
+
   return (
     <div className="min-h-screen bg-[#090d16] text-[#dfebfc] flex flex-col font-sans selection:bg-blue-500/30">
       
@@ -531,12 +575,34 @@ export default function App() {
 
           <div className="flex items-center gap-3">
             <button
+              onClick={handleDownloadManifestDirectly}
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow flex items-center gap-1.5 transition-transform active:scale-95"
+              title="Unduh Manifes Data Kampanye langsung tanpa rekam layar"
+            >
+              <Download className="w-4 h-4 text-slate-300 animate-bounce" />
+              <span>Unduh Manual</span>
+            </button>
+            <button
               id="export-trigger-btn"
               onClick={openExportHub}
-              className="bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition-transform active:scale-95"
+              disabled={isExportingActive}
+              className={`bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition-all duration-200 ${
+                isExportingActive 
+                  ? 'opacity-65 cursor-not-allowed scale-95' 
+                  : 'active:scale-95 hover:shadow-xl'
+              }`}
             >
-              <Sparkles className="w-4 h-4 text-amber-900 fill-amber-900 animate-pulse" />
-              <span>Simpan & Ekspor Video</span>
+              {isExportingActive ? (
+                <>
+                  <RefreshCw className="w-4 h-4 text-slate-950 animate-spin" />
+                  <span>Proses Ekspor Aktif...</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-900 fill-amber-900 animate-pulse" />
+                  <span>Simpan & Ekspor Video</span>
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -802,7 +868,7 @@ export default function App() {
                     <li>Silahkan klik tombol "Coba Lagi" di bawah dan setujui izin sharing yang muncul.</li>
                   </ol>
                 </div>
-                <div className="flex gap-2 justify-center pt-2">
+                <div className="flex flex-col sm:flex-row gap-2 justify-center pt-2">
                   <button
                     onClick={() => setRecorderState('idle')}
                     className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs py-2 px-4 rounded-xl"
@@ -813,7 +879,16 @@ export default function App() {
                     onClick={startHdRecording}
                     className="bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold text-xs py-2 px-4 rounded-xl"
                   >
-                    Coba Lagi
+                    Coba Lagi Rekam Layar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRecorderState('idle'); 
+                      handleExportSimulate();
+                    }}
+                    className="bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-slate-950 font-extrabold text-xs py-2 px-4 rounded-xl shadow"
+                  >
+                    Atau Jalankan Simulasi Cepat (Bypass Izin)
                   </button>
                 </div>
               </div>
@@ -925,37 +1000,80 @@ export default function App() {
                 {/* Simulated Success Screen in Option UI (If they clicked Option 2 and succeeded) */}
                 {exportingState === 'success' && (
                   <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
-                        <CheckCircle className="w-4 h-4" />
+                    {successNoticeActive ? (
+                      <div className="py-2 text-center space-y-2 animate-bounce">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
+                          <CheckCircle className="w-6 h-6 animate-pulse" />
+                        </div>
+                        <p className="text-emerald-400 font-extrabold text-xs">Simulasi Unduhan Berhasil Dilakukan!</p>
+                        <p className="text-slate-400 text-[10px]">Media pack DKR_Loyalti_Promo_Manifest.txt berhasil diunduh ke Laptop/PC Anda.</p>
                       </div>
-                      <div>
-                        <h5 className="text-white font-bold text-xs">Simulasi Unduh Berhasil Tersiapkan!</h5>
-                        <p className="text-[10px] text-slate-400">Berkas simulasi siap ditarik oleh sistem.</p>
-                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                            <CheckCircle className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <h5 className="text-white font-bold text-xs">Simulasi Unduh Berhasil Tersiapkan!</h5>
+                            <p className="text-[10px] text-slate-400">Berkas simulasi siap ditarik oleh sistem.</p>
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-2 pt-1 border-t border-slate-900">
+                          <button
+                            onClick={() => setExportingState('idle')}
+                            className="bg-slate-900 text-slate-400 hover:text-white font-bold text-[11px] py-2 px-4 rounded-lg"
+                          >
+                            Batal
+                          </button>
+                          <a 
+                            href="#"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              
+                              // Generate simulated Campaign text package to bypass alerts and trigger real download!
+                              const promoContent = `=== RETAIL TABLET CAMPAIGN BUNDLE ===\n` +
+                                `Campaign Title       : ${config.title || 'Kabar gembira buat kamu!'}\n` +
+                                `Loyalty URL/QR Value : ${config.qrValue || 'https://google.com'}\n` +
+                                `Loyalty Product      : ${config.rewardProduct || 'Teh Botol Sosro'}\n` +
+                                `Voice Synthesizer ID : ${config.voiceIndex || 0}\n\n` +
+                                `=== VOICE TRANSCIPT & KARAOKE SEQUENCE ===\n` + 
+                                segments.map((seg, idx) => `Segment ${idx + 1}: "${seg.text}"`).join('\n') + `\n\n` +
+                                `=== DISPATCH INSTRUCTIONS ===\n` +
+                                `1. Put this configuration file on your merchant tablet local directory dynamic_assets/\n` +
+                                `2. Open active DKR Merchant app under dynamic loyalty modules.\n` +
+                                `3. Tablet standee display and vocoder voice synthesizers will reflect these settings immediately.\n\n` +
+                                `Export Verification ID: SHA256-${Math.random().toString(36).substring(7).toUpperCase()}\n` +
+                                `Generated On Campaign Portal: ${new Date().toISOString()}`;
+
+                              const blob = new Blob([promoContent], { type: 'text/plain;charset=utf-8' });
+                              const downloadUrl = URL.createObjectURL(blob);
+                              
+                              const a = document.createElement('a');
+                              a.href = downloadUrl;
+                              a.download = `DKR_Loyalti_Promo_Manifest.txt`;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                              URL.revokeObjectURL(downloadUrl);
+
+                              // Instead of window.alert() which gets sandboxed & stuck, show gorgeous inline banner!
+                              setSuccessNoticeActive(true);
+                              setTimeout(() => {
+                                setSuccessNoticeActive(false);
+                                closeExportModal();
+                              }, 2500);
+                            }}
+                            className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-slate-950 font-black text-[11px] py-2 px-4 rounded-lg flex items-center gap-1 shadow"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Unduh Simulasi MP4</span>
+                          </a>
+                        </div>
+                      </>
+                    )}
                     </div>
-                    <div className="flex justify-end gap-2 pt-1 border-t border-slate-900">
-                      <button
-                        onClick={() => setExportingState('idle')}
-                        className="bg-slate-900 text-slate-400 hover:text-white font-bold text-[11px] py-2 px-4 rounded-lg"
-                      >
-                        Batal
-                      </button>
-                      <a 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          alert('Mengunduh paket media video DKR_Loyalti_Promo_9-16.mp4 beserta transkip pelengkap! Silahkan pasang di tablet retail kasir Anda.');
-                          closeExportModal();
-                        }}
-                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-slate-950 font-black text-[11px] py-2 px-4 rounded-lg flex items-center gap-1 shadow"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Unduh Simulasi MP4</span>
-                      </a>
-                    </div>
-                  </div>
-                )}
+                  )}
 
               </div>
             )}

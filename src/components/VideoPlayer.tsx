@@ -130,7 +130,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                   className="absolute left-4 top-16 bg-blue-600/90 text-white backdrop-blur-md px-3 py-1.5 rounded-xl border border-blue-400/30 shadow-lg text-xs font-medium flex items-center gap-1.5"
                 >
                   <Sparkles className="w-3.5 h-3.5 text-yellow-300 fill-yellow-300" />
-                  <span>Kasir {config.cashierName || 'Devi'} (DKK)</span>
+                  <span>Kasir {config.cashierName || 'Devi'}</span>
                 </motion.div>
                 
                 {/* Visual Cue: Mini Signage */}
