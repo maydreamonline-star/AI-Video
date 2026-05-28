@@ -176,8 +176,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
                     />
                     
                     {/* Interactive functional QR Code display */}
-                    <div className="bg-slate-100 p-2 rounded-lg">
-                      <QrCode className="w-32 h-32 text-slate-900" />
+                    <div className="bg-slate-100 p-2 rounded-lg flex items-center justify-center">
+                      <img 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(config.qrValue || 'https://google.com')}`}
+                        alt="DKR Loyalty QR"
+                        className="w-32 h-32 object-contain qr-image bg-white"
+                        referrerPolicy="no-referrer"
+                      />
                     </div>
                   </div>
 

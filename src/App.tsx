@@ -60,6 +60,18 @@ export default function App() {
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
   const intervalRef = useRef<number | null>(null);
 
+  // Synchronized refs to avoid stale closures in Web Speech API handlers
+  const isPlayingRef = useRef<boolean>(isPlaying);
+  const currentSegmentIdRef = useRef<string>(currentSegmentId);
+
+  useEffect(() => {
+    isPlayingRef.current = isPlaying;
+  }, [isPlaying]);
+
+  useEffect(() => {
+    currentSegmentIdRef.current = currentSegmentId;
+  }, [currentSegmentId]);
+
   // Load available voices
   useEffect(() => {
     const loadVoices = () => {
@@ -169,6 +181,9 @@ export default function App() {
 
       // Sync character indexes on speak
       utterance.onboundary = (event) => {
+        if (!isPlayingRef.current || currentSegmentIdRef.current !== segId) {
+          return;
+        }
         if (event.name === 'word') {
           const spokenBeforeChar = utterance.text.slice(0, event.charIndex);
           const wordOffset = spokenBeforeChar.split(/\s+/).filter(Boolean).length;
@@ -178,6 +193,9 @@ export default function App() {
 
       // Handle Segment playback finished
       utterance.onend = () => {
+        if (!isPlayingRef.current || currentSegmentIdRef.current !== segId) {
+          return;
+        }
         const nextIdx = segIdx + 1;
         if (nextIdx < segments.length) {
           setCurrentSegmentId(segments[nextIdx].id);
@@ -190,6 +208,13 @@ export default function App() {
       };
 
       utterance.onerror = (e) => {
+        if (!isPlayingRef.current || currentSegmentIdRef.current !== segId) {
+          return;
+        }
+        if (e.error === 'interrupted' || e.error === 'canceled') {
+          console.log('SpeechSynthesis intentionally interrupted/canceled');
+          return;
+        }
         console.warn('SpeechSynthesis error, running fallback timers:', e);
         startFallbackTimer(seg);
       };
@@ -200,6 +225,10 @@ export default function App() {
       const intervalDelay = 100; // Tick every 100ms
       let elapsed = 0;
       intervalRef.current = window.setInterval(() => {
+        if (!isPlayingRef.current || currentSegmentIdRef.current !== segId) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return;
+        }
         elapsed += 0.1;
         setCurrentSegmentTime(elapsed);
         
@@ -223,6 +252,10 @@ export default function App() {
     const textWords = seg.text.split(' ');
     
     intervalRef.current = window.setInterval(() => {
+      if (!isPlayingRef.current || currentSegmentIdRef.current !== seg.id) {
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        return;
+      }
       elapsed += 0.1;
       setCurrentSegmentTime(elapsed);
       

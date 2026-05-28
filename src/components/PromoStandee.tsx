@@ -116,7 +116,7 @@ export const PromoStandee: React.FC<PromoStandeeProps> = ({ config, flyerImage }
                 </div>
                 <div class="program-title">Program Loyalitas</div>
                 <div class="qr-wrapper">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="qr-image"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16V21H16"/><path d="M21 12H16"/><path d="M12 21v-4"/><path d="M12 12v-4"/><path d="M3 12h5"/><rect width="2" height="2" x="11" y="11" rx="0.5"/><path d="M12 3v5"/></svg>
+                  <img src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(config.qrValue || 'https://google.com')}" class="qr-image" alt="QR Code" />
                 </div>
                 <div class="reward-banner">
                   🎁 BONUS KAKAK: ${config.rewardProduct || 'Teh Botol Sosro'} Gratis!
@@ -163,7 +163,12 @@ export const PromoStandee: React.FC<PromoStandeeProps> = ({ config, flyerImage }
 
           {/* QR Standee Core Card inside Holder */}
           <div className="bg-white rounded-xl p-2.5 w-full flex flex-col items-center text-slate-900 border border-slate-200 shadow-md">
-            <QrCode className="w-24 h-24 text-slate-900" />
+            <img 
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(config.qrValue || 'https://google.com')}`}
+              alt="QR Code"
+              className="w-24 h-24 object-contain qr-image"
+              referrerPolicy="no-referrer"
+            />
             <div className="bg-amber-100 text-amber-900 font-bold text-[8px] py-1 px-2.5 rounded-full mt-2 border border-amber-300">
               Reward Menanti Anda!
             </div>
@@ -239,7 +244,13 @@ export const PromoStandee: React.FC<PromoStandeeProps> = ({ config, flyerImage }
             <p style={{ textAlign: 'center', fontSize: '13px', color: '#4b5563', margin: '0 0 20px 0' }}>Scan Disini &amp; Dapatkan Produk Gratis Transaksi Berikutnya!</p>
             
             <div style={{ display: 'flex', justifyContent: 'center', margin: '20px 0' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: '#111827' }}><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16V21H16"/><path d="M21 12H16"/><path d="M12 21v-4"/><path d="M12 12v-4"/><path d="M3 12h5"/><rect width="2" height="2" x="11" y="11" rx="0.5"/><path d="M12 3v5"/></svg>
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(config.qrValue || 'https://google.com')}`}
+                alt="QR Code"
+                className="qr-image"
+                style={{ width: '160px', height: '160px', objectFit: 'contain' }}
+                referrerPolicy="no-referrer"
+              />
             </div>
 
             <div style={{ background: '#fef08a', color: '#854d0e', padding: '12px', borderRadius: '12px', textAlign: 'center', fontWeight: 'bold', fontSize: '14px', border: '2px dashed #ca8a04' }}>
