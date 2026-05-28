@@ -339,19 +339,37 @@ export default function App() {
   const startHdRecording = async () => {
     try {
       setRecorderError('');
+      
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+        throw new Error('Browser atau perangkat Anda tidak mendukung API Perekam Layar (getDisplayMedia). Silakan gunakan Browser Chrome/Edge/Safari terbaru di Laptop/PC Desktop.');
+      }
+
       setRecorderState('countdown');
       setRecCountdown(3);
       chunksRef.current = [];
 
-      // Request screen media capture with standard fully-compatible HD constraints
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        video: {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-          frameRate: { ideal: 30 }
-        },
-        audio: true
-      });
+      let stream: MediaStream;
+      try {
+        // Request screen media capture with standard fully-compatible HD constraints
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 }
+          },
+          audio: true
+        });
+      } catch (audioErr: any) {
+        console.warn('Gagal merekam audio tab, mencoba alternatif tanpa audio agar tidak stuck...', audioErr);
+        // Fallback to video-only to guarantee it never gets stuck
+        stream = await navigator.mediaDevices.getDisplayMedia({
+          video: {
+            width: { ideal: 1920 },
+            height: { ideal: 1080 },
+            frameRate: { ideal: 30 }
+          }
+        });
+      }
 
       streamRef.current = stream;
 
@@ -459,7 +477,8 @@ export default function App() {
 
     } catch (err: any) {
       console.error('Error starting display capture:', err);
-      setRecorderError(err?.message || 'Akses rekam layar/audio ditolak atau tidak didukung.');
+      // Give premium instructions on how to start if blocked by parent window/iframe restrictions
+      setRecorderError(err?.message || 'Akses rekam layar/audio ditolak. Jika aplikasi dijalankan di iframe preview, silakan buka aplikasi di Tab Baru lewat pilihan di pojok kanan atas.');
       setRecorderState('error');
     }
   };
@@ -831,6 +850,18 @@ export default function App() {
                           Saat browser menampilkan pop-up penangkapan layar, silakan centang pilihan <b>"Bagikan Audio Tab" (Share Tab Audio)</b> agar suara narasi Kasir DKR ikut terekam ke dalam video!
                         </p>
                       </div>
+
+                      {(window.self !== window.top) && (
+                        <div className="bg-emerald-950/20 p-3 rounded-lg border border-emerald-500/20 space-y-1.5 text-[10px] leading-relaxed text-emerald-300">
+                          <p className="font-bold text-amber-400 flex items-center gap-1">
+                            <Info className="w-3.5 h-3.5 shrink-0" />
+                            <span>Rekomendasi Preview Iframe:</span>
+                          </p>
+                          <p>
+                            Untuk kestabilan izin perekaman, silakan klik tombol <b>"Buka di Tab Baru"</b> (ikon panah keluar di atas kanan panel pratinjau Anda) agar browser Anda bisa mengajukan jendela rekam layar secara penuh!
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <button
