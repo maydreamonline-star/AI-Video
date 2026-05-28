@@ -1,5 +1,5 @@
 import { PromotionalTemplate } from './types';
-import cashierAvatar from './assets/images/dkr_cashier_avatar_1779933424123.png';
+import cashierAvatar from './assets/images/non_branded_spg_cashier_1779955862983.png';
 import loyaltyQrFlyer from './assets/images/dkr_loyalty_qr_flyer_1779933446873.png';
 
 export const templates: PromotionalTemplate[] = [
