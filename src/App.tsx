@@ -28,12 +28,7 @@ export default function App() {
     try {
       const saved = localStorage.getItem('dkr_voice_config');
       if (saved) {
-        const parsed = JSON.parse(saved);
-        if (!parsed.ttsEngine) {
-          parsed.ttsEngine = 'cloud-google';
-          parsed.elevenlabsVoiceId = '21m00Tcm4TlvDq8ikWAM';
-        }
-        return parsed;
+        return JSON.parse(saved);
       }
     } catch (e) {
       console.error('Error loading config from localStorage:', e);
@@ -50,10 +45,7 @@ export default function App() {
       backgroundColor: '#1d4ed8', // DKR Brand Blue
       accentColor: '#fbbf24', // DKR Yellow Accent
       captionStyle: 'tiktok-yellow',
-      cameraOverlay: true,
-      ttsEngine: 'cloud-google',
-      elevenlabsApiKey: '',
-      elevenlabsVoiceId: '21m00Tcm4TlvDq8ikWAM'
+      cameraOverlay: true
     };
   });
 
@@ -149,7 +141,6 @@ export default function App() {
 
   // Speech Synth Ref
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   const intervalRef = useRef<number | null>(null);
 
   // Synchronized refs to avoid stale closures in Web Speech API handlers
@@ -206,10 +197,6 @@ export default function App() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
     }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
@@ -258,92 +245,18 @@ export default function App() {
     setCurrentSegmentTime(0);
     setCurrentWordIndex(-1);
 
-    // Setup dynamic speech utterance with replaced variables
-    let spokenText = seg.text
-      .replace(/DKR/g, 'D K R')
-      .replace(/HP/g, 'ha pe')
-      .replace(/QR/g, 'kiu ar')
-      .replace(/QR Code/g, 'kiu ar kod');
-    
-    // Variable replacements
-    spokenText = spokenText.replace(/Kasir/g, `Kasir ${config.cashierName}`);
-
-    // If Cloud-based TTS is selected, stream audio instead of local Web Speech Synthesis
-    if (config.ttsEngine === 'cloud-google' || config.ttsEngine === 'cloud-elevenlabs') {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
-
-      const audioUrl = `/api/tts?text=${encodeURIComponent(spokenText)}&engine=${config.ttsEngine}&voiceId=${config.elevenlabsVoiceId || '21m00Tcm4TlvDq8ikWAM'}&key=${encodeURIComponent(config.elevenlabsApiKey || '')}`;
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-
-      // Set speed rate
-      audio.playbackRate = config.voiceRate;
-
-      // When the audio ends, go to the next segment
-      audio.onended = () => {
-        if (!isPlayingRef.current || currentSegmentIdRef.current !== segId) {
-          return;
-        }
-        const nextIdx = segIdx + 1;
-        if (nextIdx < segments.length) {
-          setCurrentSegmentId(segments[nextIdx].id);
-          speakSegment(segments[nextIdx].id);
-        } else {
-          setIsPlaying(false);
-          setCurrentWordIndex(-1);
-          setCurrentSegmentTime(0);
-        }
-      };
-
-      // Handle play errors (e.g., loading failed or CORS)
-      audio.onerror = (e) => {
-        if (!isPlayingRef.current || currentSegmentIdRef.current !== segId) {
-          return;
-        }
-        console.warn('Cloud audio playback failed, falling back to timer:', e);
-        startFallbackTimer(seg);
-      };
-
-      audio.play().catch(err => {
-        console.error('Audio play failed:', err);
-        // If auto-play blocked, fall back immediately to standard visual ticking
-        startFallbackTimer(seg);
-      });
-
-      // Start elapsed timer matching the audio currentTime or elapsed
-      const intervalDelay = 100; // Tick every 100ms
-      let elapsed = 0;
-      intervalRef.current = window.setInterval(() => {
-        if (!isPlayingRef.current || currentSegmentIdRef.current !== segId) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          return;
-        }
-        
-        // Use actual audio progress if metadata loaded, else mock increment
-        if (audio && !isNaN(audio.duration) && audio.duration > 0) {
-          elapsed = audio.currentTime;
-        } else {
-          elapsed += 0.1;
-        }
-        
-        setCurrentSegmentTime(elapsed);
-        
-        // Simulating word highlighting based on pacing
-        const words = spokenText.split(/\s+/).filter(Boolean);
-        const totalWords = words.length;
-        const duration = (audio && !isNaN(audio.duration) && audio.duration > 0) ? audio.duration : seg.duration;
-        const estimatedWordIdx = Math.min(totalWords - 1, Math.floor((elapsed / duration) * totalWords));
-        setCurrentWordIndex(estimatedWordIdx >= 0 ? estimatedWordIdx : -1);
-      }, intervalDelay);
-
-      return;
-    }
-
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       window.speechSynthesis.cancel();
+
+      // Setup dynamic speech utterance with replaced variables
+      let spokenText = seg.text
+        .replace(/DKR/g, 'D K R')
+        .replace(/HP/g, 'ha pe')
+        .replace(/QR/g, 'kiu ar')
+        .replace(/QR Code/g, 'kiu ar kod');
+      
+      // Variable replacements
+      spokenText = spokenText.replace(/Kasir/g, `Kasir ${config.cashierName}`);
       
       const utterance = new SpeechSynthesisUtterance(spokenText);
       utteranceRef.current = utterance;
