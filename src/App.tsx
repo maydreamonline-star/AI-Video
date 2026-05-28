@@ -7,35 +7,113 @@ import { PromoStandee } from './components/PromoStandee';
 import { 
   Sparkles, Smartphone, Play, Pause, Save, HelpCircle, 
   Settings, CheckCircle, Volume2, Store, Printer, QrCode, Grid, ListCollapse,
-  Camera, AlertTriangle, Download, Info, Video, RefreshCw, Eye, EyeOff
+  Camera, AlertTriangle, Download, Info, Video, RefreshCw, Eye, EyeOff, ExternalLink
 } from 'lucide-react';
 
 export default function App() {
-  // Public Screen Sharing Focus Mode State
-  const [isShareFocus, setIsShareFocus] = useState<boolean>(false);
-  const [hideExtraUI, setHideExtraUI] = useState<boolean>(false);
-
-  // Config state
-  const [config, setConfig] = useState<VideoConfig>({
-    merchantName: 'DKR Retail Store',
-    cashierName: 'Devi',
-    rewardProduct: 'Teh Botol Sosro Dingin',
-    qrValue: 'https://dkr.my.id/loyalty',
-    voicePitch: 1.35, // High pitch for a cheerful female voice
-    voiceRate: 1.12, // Faster speech rate for a talkative/chatty (cerewet) vibe
-    selectedVoiceName: '',
-    selectedTemplateId: 'spg-ceria-cerewet',
-    backgroundColor: '#1d4ed8', // DKR Brand Blue
-    accentColor: '#fbbf24', // DKR Yellow Accent
-    captionStyle: 'tiktok-yellow',
-    cameraOverlay: true
+  // Simple SPA Routing State (Supports path and hash fallback gracefully)
+  const [currentPath, setCurrentPath] = useState<string>(() => {
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    if (path === '/share-screen' || hash === '#/share-screen' || hash === '#share-screen') {
+      return '/share-screen';
+    }
+    return '/';
   });
 
-  // Segments state initialized with spg-ceria-cerewet template
+  const [hideExtraUI, setHideExtraUI] = useState<boolean>(false);
+
+  // Config state initialized from localStorage if available
+  const [config, setConfig] = useState<VideoConfig>(() => {
+    try {
+      const saved = localStorage.getItem('dkr_voice_config');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Error loading config from localStorage:', e);
+    }
+    return {
+      merchantName: 'DKR Retail Store',
+      cashierName: 'Devi',
+      rewardProduct: 'Teh Botol Sosro Dingin',
+      qrValue: 'https://dkr.my.id/loyalty',
+      voicePitch: 1.35, // High pitch for a cheerful female voice
+      voiceRate: 1.12, // Faster speech rate for a talkative/chatty (cerewet) vibe
+      selectedVoiceName: '',
+      selectedTemplateId: 'spg-ceria-cerewet',
+      backgroundColor: '#1d4ed8', // DKR Brand Blue
+      accentColor: '#fbbf24', // DKR Yellow Accent
+      captionStyle: 'tiktok-yellow',
+      cameraOverlay: true
+    };
+  });
+
+  // Segments state initialized with spg-ceria-cerewet template or localStorage
   const [segments, setSegments] = useState<ScriptSegment[]>(() => {
+    try {
+      const saved = localStorage.getItem('dkr_voice_segments');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.error('Error loading segments from localStorage:', e);
+    }
     const spgTemplate = templates.find(t => t.id === 'spg-ceria-cerewet');
     return spgTemplate ? JSON.parse(JSON.stringify(spgTemplate.segments)) : [];
   });
+
+  // Route/Hash listener to handle live URL navigation
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (path === '/share-screen' || hash === '#/share-screen' || hash === '#share-screen') {
+        setCurrentPath('/share-screen');
+      } else {
+        setCurrentPath('/');
+      }
+    };
+    window.addEventListener('popstate', handleLocationChange);
+    window.addEventListener('hashchange', handleLocationChange);
+    return () => {
+      window.removeEventListener('popstate', handleLocationChange);
+      window.removeEventListener('hashchange', handleLocationChange);
+    };
+  }, []);
+
+  // Save changes to localStorage for offline memory and real-time syncing
+  useEffect(() => {
+    localStorage.setItem('dkr_voice_config', JSON.stringify(config));
+  }, [config]);
+
+  useEffect(() => {
+    localStorage.setItem('dkr_voice_segments', JSON.stringify(segments));
+  }, [segments]);
+
+  // Real-time Storage Sync to mirror changes from active admin tab to the sharing tab instantly!
+  useEffect(() => {
+    const handleStorageEvent = (e: StorageEvent) => {
+      if (e.key === 'dkr_voice_config' && e.newValue) {
+        try {
+          setConfig(JSON.parse(e.newValue));
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      if (e.key === 'dkr_voice_segments' && e.newValue) {
+        try {
+          setSegments(JSON.parse(e.newValue));
+        } catch (err) {
+          console.error(err);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageEvent);
+    return () => {
+      window.removeEventListener('storage', handleStorageEvent);
+    };
+  }, []);
 
   // Playback states
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
@@ -123,6 +201,14 @@ export default function App() {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
+  };
+
+  const navigateToShareScreen = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
+    pauseVideo();
+    setCurrentPath('/share-screen');
+    window.location.hash = '#/share-screen';
+    window.history.pushState(null, '', '/share-screen');
   };
 
   const playVideo = (startFromId?: string) => {
@@ -554,59 +640,61 @@ export default function App() {
 
   const isExportingActive = exportingState === 'preparing' || exportingState === 'rendering' || ['countdown', 'recording', 'processing'].includes(recorderState);
 
-  if (isShareFocus) {
+  if (currentPath === '/share-screen') {
     return (
-      <div className="min-h-screen bg-[#07090e] text-[#dfebfc] flex flex-col items-center justify-center font-sans p-4 relative overflow-hidden selection:bg-blue-500/30">
+      <div className="min-h-screen bg-[#06080e] text-[#dfebfc] flex flex-col items-center justify-center font-sans p-2 sm:p-4 relative overflow-hidden selection:bg-blue-500/30">
         {/* Ambient background glows for professional projection look */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-[120px] pointer-events-none" />
 
         {/* Floating Presentation Control Panel */}
         {!hideExtraUI ? (
-          <div className="w-full max-w-[350px] sm:max-w-[380px] mb-4 flex flex-col gap-2.5 z-10 bg-slate-900/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-2xl">
+          <div className="w-full max-w-[380px] sm:max-w-[420px] mb-2 flex flex-col gap-2 z-10 bg-slate-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-2xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
+                <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
-                <span className="text-xs font-black text-slate-200 tracking-wider uppercase font-mono">Presentasi Publik</span>
+                <span className="text-[11px] font-black text-slate-200 tracking-wider uppercase font-mono">Presentasi Publik</span>
               </div>
               
               <button
                 onClick={() => {
                   pauseVideo();
-                  setIsShareFocus(false);
+                  setCurrentPath('/');
+                  window.location.hash = '';
+                  window.history.pushState(null, '', '/');
                 }}
-                className="bg-red-550/10 hover:bg-red-550/20 text-red-400 border border-red-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-lg active:scale-95 transition-all text-center"
+                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-lg active:scale-95 transition-all text-center"
               >
                 Kembali
               </button>
             </div>
             
-            <div className="flex gap-2 pt-1 border-t border-slate-800/60">
+            <div className="flex gap-1.5 pt-2 border-t border-slate-800/60">
               <button
                 onClick={() => setHideExtraUI(true)}
-                className="flex-1 bg-slate-800 hover:bg-slate-750 text-yellow-450 font-extrabold text-[10px] uppercase tracking-wider py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95"
-                title="Sembunyikan semua tombol & teks bantuan luar agar rekaman/share hanya fokus pada HP saja!"
+                className="flex-1 bg-slate-800 hover:bg-slate-750 text-yellow-400 font-extrabold text-[10px] uppercase tracking-wider py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                title="Sembunyikan menu luar agar fokus hanya HP murni!"
               >
-                <EyeOff className="w-3.5 h-3.5 text-yellow-400" />
-                <span>Sembunyikan Menu & Fokus Hanya HP</span>
+                <EyeOff className="w-3.5 h-3.5" />
+                <span>Sembunyikan Menu & Fokus HP Only</span>
               </button>
             </div>
           </div>
         ) : (
           <button
             onClick={() => setHideExtraUI(false)}
-            className="fixed bottom-4 right-4 z-50 bg-slate-900/40 hover:bg-slate-900 text-slate-500 hover:text-slate-200 border border-slate-800/40 p-2.5 rounded-xl text-[10px] font-bold tracking-wider uppercase backdrop-blur-xs transition-all shadow-xl opacity-15 hover:opacity-100 flex items-center justify-center gap-1.5"
+            className="fixed bottom-4 right-4 z-50 bg-slate-900/60 hover:bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800/40 p-2.5 rounded-xl text-[10px] font-bold tracking-wider uppercase backdrop-blur-md transition-all shadow-xl opacity-20 hover:opacity-100 flex items-center justify-center gap-1.5 group"
           >
-            <Eye className="w-4 h-4 text-emerald-400" />
+            <Eye className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
             <span>Tampilkan Menu</span>
           </button>
         )}
 
-        {/* Smartphone Simulator Area - Responsive mobile container */}
-        <div className="w-full max-w-[360px] sm:max-w-[380px] px-2 flex justify-center transition-transform duration-300 drop-shadow-[0_25px_60px_rgba(29,78,216,0.15)] z-10 my-1">
+        {/* Smartphone Simulator Area - Full-width scale responsive container */}
+        <div className="w-full max-w-[380px] sm:max-w-[420px] px-3 flex justify-center transition-transform duration-300 drop-shadow-[0_25px_60px_rgba(29,78,216,0.18)] z-10 my-auto">
           <VideoPlayer
             segments={segments}
             config={config}
@@ -649,14 +737,23 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
-              onClick={() => setIsShareFocus(true)}
-              className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg border border-blue-500/30 flex items-center gap-1.5 transition-all active:scale-95 group"
+              onClick={() => navigateToShareScreen()}
+              className="bg-[#1e293b] hover:bg-slate-800 text-[#dfebfc] font-extrabold text-[11px] px-3.5 py-2.5 rounded-xl border border-slate-700/60 flex items-center gap-1.5 transition-all active:scale-95 group shadow hover:border-slate-600"
             >
-              <Smartphone className="w-4 h-4 text-cyan-300 group-hover:scale-110 transition-transform animate-pulse" />
-              <span>Fokus Share Screen (9:16)</span>
+              <Smartphone className="w-3.5 h-3.5 text-cyan-300 group-hover:scale-110 transition-transform" />
+              <span>Fokus Layar Ini</span>
             </button>
+            <a
+              href="#/share-screen"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-extrabold text-[11px] px-3.5 py-2.5 rounded-xl shadow-lg border border-blue-500/30 flex items-center gap-1.5 transition-all active:scale-95 group"
+            >
+              <ExternalLink className="w-3.5 h-3.5 text-cyan-300 group-hover:scale-110 transition-transform animate-pulse" />
+              <span>Buka di Tab Baru (Casting)</span>
+            </a>
           </div>
         </div>
       </header>
@@ -678,13 +775,24 @@ export default function App() {
             </div>
 
             {/* Enter Share Screen Button directly under the preview title */}
-            <button
-              onClick={() => setIsShareFocus(true)}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-slate-200 font-extrabold text-xs py-3 px-4 rounded-xl shadow border border-slate-800 hover:border-slate-700 flex items-center justify-center gap-2 transition-all active:scale-95 group"
-            >
-              <Smartphone className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
-              <span>Mulai Mode Fokus Share Screen</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => navigateToShareScreen()}
+                className="flex-1 bg-slate-900 hover:bg-slate-800 text-slate-200 font-extrabold text-[11px] py-2.5 px-3.5 rounded-xl shadow border border-slate-800 hover:border-slate-750 flex items-center justify-center gap-1.5 transition-all active:scale-95 group"
+              >
+                <Smartphone className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+                <span>Fokus Layar Ini</span>
+              </button>
+              <a
+                href="#/share-screen"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-indigo-900/40 hover:bg-indigo-900/60 text-indigo-200 font-extrabold text-[11px] py-2.5 px-3 rounded-xl shadow border border-indigo-800/40 hover:border-indigo-700/60 flex items-center justify-center gap-1.5 transition-all active:scale-95"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Tab Baru</span>
+              </a>
+            </div>
 
             {/* Video Player Display */}
             <VideoPlayer
