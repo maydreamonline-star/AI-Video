@@ -11,6 +11,9 @@ import {
 } from 'lucide-react';
 
 export default function App() {
+  // Public Screen Sharing Focus Mode State
+  const [isShareFocus, setIsShareFocus] = useState<boolean>(false);
+
   // Config state
   const [config, setConfig] = useState<VideoConfig>({
     merchantName: 'DKR Retail Store',
@@ -550,6 +553,65 @@ export default function App() {
 
   const isExportingActive = exportingState === 'preparing' || exportingState === 'rendering' || ['countdown', 'recording', 'processing'].includes(recorderState);
 
+  if (isShareFocus) {
+    return (
+      <div className="min-h-screen bg-[#07090e] text-[#dfebfc] flex flex-col items-center justify-center font-sans p-4 relative overflow-hidden selection:bg-blue-500/30">
+        {/* Ambient background glows for professional projection look */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-[120px] pointer-events-none" />
+
+        {/* Floating Presentation Control Panel */}
+        <div className="w-full max-w-[350px] sm:max-w-[380px] mb-4 flex items-center justify-between z-10 bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-2xl">
+          <div className="flex items-center gap-2">
+            <span className="relative flex h-2.5 w-2.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+            </span>
+            <span className="text-xs font-black text-slate-200 tracking-wider uppercase font-mono">Pratinjau Publik (9:16)</span>
+          </div>
+          
+          <button
+            onClick={() => {
+              pauseVideo();
+              setIsShareFocus(false);
+            }}
+            className="bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-extrabold text-xs px-3.5 py-1.5 rounded-xl active:scale-95 transition-all flex items-center gap-1 shadow-sm"
+          >
+            <span>✕ Keluar Mode Fokus</span>
+          </button>
+        </div>
+
+        {/* Smartphone Simulator Area (No wrapper panel clutter) */}
+        <div className="scale-100 sm:scale-[1.03] transition-transform duration-300 drop-shadow-[0_25px_60px_rgba(29,78,216,0.15)] z-10 my-1">
+          <VideoPlayer
+            segments={segments}
+            config={config}
+            highlightedImages={{
+              cashier: defaultImages.cashier,
+              flyer: defaultImages.flyer
+            }}
+            isPlaying={isPlaying}
+            activeSegmentId={currentSegmentId}
+            onPlayToggle={handlePlayToggle}
+            onRestart={handleRestart}
+            currentTime={currentSegmentTime}
+            currentWordIndex={currentWordIndex}
+          />
+        </div>
+
+        {/* Clean Sharing Helper Overlay */}
+        <div className="max-w-[350px] sm:max-w-[380px] w-full mt-4 bg-slate-905/65 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80 text-center space-y-1.5 z-10 shadow-lg">
+          <p className="text-[11px] text-slate-300 leading-relaxed font-bold">
+            💡 Panduan Rekam / Share Screen Publik:
+          </p>
+          <p className="text-[10px] text-slate-400 leading-normal">
+            Saat masuk menu sharing browser (Share Screen), pilih menu <b>"Tab Chrome" (Chrome Tab)</b> lalu pilih tab ini. Perekam luar atau penonton konferensi Anda hanya akan melihat area video HP 9:16 yang bersih ini tanpa panel konfigurasi admin di sekitarnya!
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#090d16] text-[#dfebfc] flex flex-col font-sans selection:bg-blue-500/30">
       
@@ -575,34 +637,11 @@ export default function App() {
 
           <div className="flex items-center gap-3">
             <button
-              onClick={handleDownloadManifestDirectly}
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow flex items-center gap-1.5 transition-transform active:scale-95"
-              title="Unduh Manifes Data Kampanye langsung tanpa rekam layar"
+              onClick={() => setIsShareFocus(true)}
+              className="bg-gradient-to-r from-blue-600 via-indigo-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg border border-blue-500/30 flex items-center gap-1.5 transition-all active:scale-95 group"
             >
-              <Download className="w-4 h-4 text-slate-300 animate-bounce" />
-              <span>Unduh Manual</span>
-            </button>
-            <button
-              id="export-trigger-btn"
-              onClick={openExportHub}
-              disabled={isExportingActive}
-              className={`bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition-all duration-200 ${
-                isExportingActive 
-                  ? 'opacity-65 cursor-not-allowed scale-95' 
-                  : 'active:scale-95 hover:shadow-xl'
-              }`}
-            >
-              {isExportingActive ? (
-                <>
-                  <RefreshCw className="w-4 h-4 text-slate-950 animate-spin" />
-                  <span>Proses Ekspor Aktif...</span>
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 text-amber-900 fill-amber-900 animate-pulse" />
-                  <span>Simpan & Ekspor Video</span>
-                </>
-              )}
+              <Smartphone className="w-4 h-4 text-cyan-300 group-hover:scale-110 transition-transform animate-pulse" />
+              <span>Fokus Share Screen (9:16)</span>
             </button>
           </div>
         </div>
@@ -623,6 +662,15 @@ export default function App() {
                 Live Rendering
               </span>
             </div>
+
+            {/* Enter Share Screen Button directly under the preview title */}
+            <button
+              onClick={() => setIsShareFocus(true)}
+              className="w-full bg-slate-900 hover:bg-slate-800 text-slate-200 font-extrabold text-xs py-3 px-4 rounded-xl shadow border border-slate-800 hover:border-slate-700 flex items-center justify-center gap-2 transition-all active:scale-95 group"
+            >
+              <Smartphone className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
+              <span>Mulai Mode Fokus Share Screen</span>
+            </button>
 
             {/* Video Player Display */}
             <VideoPlayer
