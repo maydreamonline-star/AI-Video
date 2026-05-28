@@ -916,14 +916,16 @@ export default function App() {
                         Merekam frame 9:16 dari simulator video secara live dan real-time. Menghasilkan berkas video asli dengan suara pidato kasir dan teks karaoke yang tersinkronisasi sempurna!
                       </p>
 
-                      <div className="bg-slate-950/70 p-3 rounded-lg border border-slate-800 space-y-1.5 text-[10px] leading-relaxed text-slate-300">
+                      <div className="bg-slate-950/70 p-3.5 rounded-lg border border-slate-800 space-y-2 text-[10px] leading-relaxed text-slate-300">
                         <p className="font-bold text-amber-400 flex items-center gap-1">
                           <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                          <span>PENTING! Kunci Suara Video:</span>
+                          <span>PANDUAN REKAMAN BERSIH & AUDIO SUARA:</span>
                         </p>
-                        <p>
-                          Saat browser menampilkan pop-up penangkapan layar, silakan centang pilihan <b>"Bagikan Audio Tab" (Share Tab Audio)</b> agar suara narasi Kasir DKR ikut terekam ke dalam video!
-                        </p>
+                        <ul className="list-disc pl-4 space-y-1 text-slate-300">
+                          <li><b>Cara agar Rekaman Bersih (Hanya Simulator):</b> Saat popup browser muncul, pilih menu tab <b>"Tab Chrome" (Chrome Tab)</b> lalu pilih tab aplikasi ini. Jangan pilih "Seluruh Layar" agar tombol luar tidak ikut terekam.</li>
+                          <li><b>Cara agar Suara Masuk:</b> WAJIB centang pilihan <b>"Bagikan Audio Tab" (Share Tab Audio)</b> di pojok kiri bawah popup sebelum mulai merekam agar suara Kasir DKR masuk ke video.</li>
+                          <li><b>Format File WebM (.webm):</b> Browser secara lokal mengunduh video format WebM (karena aturan lisensi browser). WebM sepenuhnya didukung di TikTok, Reels, YouTube Shorts, CapCut, WhatsApp, dan VLC Player. Jika wajib menggunakan .mp4, Anda bisa konversi instan gratis di situs seperti <i>cloudconvert.com</i> atau <i>ezgif.com</i> dalam 2 detik!</li>
+                        </ul>
                       </div>
 
                       {(window.self !== window.top) && (
@@ -957,14 +959,14 @@ export default function App() {
                         <span className="text-slate-500 font-bold text-xs font-mono">Bypass</span>
                       </div>
                       <h4 className="text-white font-bold text-sm tracking-wide flex items-center gap-1.5">
-                        <Sparkles className="w-4 h-4 text-yellow-400" />
-                        <span>Simulasi Ekspres Cepat (Mockup)</span>
+                        <Sparkles className="w-4 h-4 text-slate-400" />
+                        <span>Ekspor Manifes Data Teks (.txt)</span>
                       </h4>
                       <p className="text-slate-400 text-[11px] leading-relaxed">
-                        Jika browser Anda sedang bermasalah membagikan penangkapan layar/tab, Anda dapat menstimulasikan ekspor instan ini tanpa meminta izin browser apa pun.
+                        Mengunduh paket data teks kampanye murni berisi setelan kasir, QR code, dan transkrip. Sangat ringan untuk ditransfer langsung ke memori internal tablet Kasir DKR fisik Anda!
                       </p>
                       <p className="text-slate-500 text-[10px] italic">
-                        *Catatan: Ini akan menampilkan antarmuka kesuksesan ekspor instan dengan cepat dan murni untuk keperluan demonstrasi atau uji rancangan aset.
+                        *Catatan: Tombol ini TIDAK mengunduh file video, melainkan file teks konfigurasi pintar (.txt) untuk sinkronisasi otomatis perangkat tablet.
                       </p>
                     </div>
 
@@ -1067,7 +1069,7 @@ export default function App() {
                             className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-slate-950 font-black text-[11px] py-2 px-4 rounded-lg flex items-center gap-1 shadow"
                           >
                             <Download className="w-3.5 h-3.5" />
-                            <span>Unduh Simulasi MP4</span>
+                            <span>Unduh Manifes Teks (.txt)</span>
                           </a>
                         </div>
                       </>
