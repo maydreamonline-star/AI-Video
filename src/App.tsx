@@ -39,7 +39,7 @@ export default function App() {
   const [currentSegmentTime, setCurrentSegmentTime] = useState<number>(0);
   const [currentWordIndex, setCurrentWordIndex] = useState<number>(-1);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [exportingState, setExportingState] = useState<'idle' | 'preparing' | 'rendering' | 'success'>('idle');
+  const [exportingState, setExportingState] = useState<'idle' | 'hub' | 'preparing' | 'rendering' | 'success'>('idle');
   const [exportProgress, setExportProgress] = useState(0);
 
   // High-Definition (HD) Real-time Screen Recorder states
@@ -291,6 +291,14 @@ export default function App() {
     }
   };
 
+  const openExportHub = () => {
+    setExportingState('hub');
+    setRecorderState('idle');
+    setRecorderError('');
+    setRecordedVideoUrl('');
+    setExportProgress(0);
+  };
+
   // Run a simulated export
   const handleExportSimulate = () => {
     setExportingState('preparing');
@@ -335,18 +343,14 @@ export default function App() {
       setRecCountdown(3);
       chunksRef.current = [];
 
-      // Request screen media capture with optimal standard HD constraints
+      // Request screen media capture with standard fully-compatible HD constraints
       const stream = await navigator.mediaDevices.getDisplayMedia({
         video: {
-          width: { ideal: 1925 },
+          width: { ideal: 1920 },
           height: { ideal: 1080 },
           frameRate: { ideal: 30 }
         },
-        audio: {
-          echoCancellation: false,
-          noiseSuppression: false,
-          autoGainControl: false
-        }
+        audio: true
       });
 
       streamRef.current = stream;
@@ -359,63 +363,84 @@ export default function App() {
         if (currentCount <= 0) {
           window.clearInterval(countInterval);
           
-          // Determine best supported mimeType
-          let selectedMime = 'video/webm;codecs=vp9';
-          if (typeof MediaRecorder !== 'undefined') {
-            if (!MediaRecorder.isTypeSupported(selectedMime)) selectedMime = 'video/webm;codecs=vp8';
-            if (!MediaRecorder.isTypeSupported(selectedMime)) selectedMime = 'video/webm';
-            if (!MediaRecorder.isTypeSupported(selectedMime)) selectedMime = 'video/mp4';
+          try {
+            // Determine best supported mimeType in current browser
+            let selectedMime = 'video/webm;codecs=vp9';
+            if (typeof MediaRecorder !== 'undefined') {
+              const testTypes = [
+                'video/webm;codecs=vp9',
+                'video/webm;codecs=vp8',
+                'video/webm',
+                'video/mp4;codecs=h264',
+                'video/mp4',
+                'video/quicktime'
+              ];
+              const supportedType = testTypes.find(t => MediaRecorder.isTypeSupported(t));
+              selectedMime = supportedType || '';
+            }
+            setRecordedBlobType(selectedMime);
+
+            const recorder = new MediaRecorder(stream, selectedMime ? { mimeType: selectedMime } : undefined);
+            recorderRef.current = recorder;
+
+            recorder.ondataavailable = (e) => {
+              if (e.data && e.data.size > 0) {
+                chunksRef.current.push(e.data);
+              }
+            };
+
+            recorder.onstop = () => {
+              try {
+                const finalBlob = new Blob(chunksRef.current, { type: selectedMime || 'video/webm' });
+                const videoUrl = URL.createObjectURL(finalBlob);
+                setRecordedVideoUrl(videoUrl);
+                setRecorderState('finished');
+                
+                // Auto trigger immediate file download
+                const a = document.createElement('a');
+                a.href = videoUrl;
+                const extension = selectedMime && selectedMime.includes('mp4') ? 'mp4' : 'webm';
+                a.download = `DKR_Loyalti_Promo_HD.${extension}`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+              } catch (err: any) {
+                console.error('Error processing recorded video blob:', err);
+                setRecorderError(err?.message || 'Gagal memproses berkas rekaman video.');
+                setRecorderState('error');
+              } finally {
+                // Turn off screen sharing bar/activities immediately
+                if (streamRef.current) {
+                  streamRef.current.getTracks().forEach(track => track.stop());
+                  streamRef.current = null;
+                }
+              }
+            };
+
+            // Adjust state to recording
+            setRecorderState('recording');
+            
+            // Force playback restart from segment 1 to record from the very start!
+            setCurrentSegmentTime(0);
+            setCurrentWordIndex(-1);
+            setCurrentSegmentId(segments[0]?.id);
+            
+            recorder.start();
+
+            // Wait tiny delay so recorder catches frames
+            setTimeout(() => {
+              setIsPlaying(true);
+              speakSegment(segments[0]?.id);
+            }, 350);
+
+          } catch (initErr: any) {
+            console.error('Error starting MediaRecorder instance:', initErr);
+            setRecorderError(initErr?.message || 'Format video rekaman tidak cocok dengan browser Anda.');
+            setRecorderState('error');
+            if (stream) {
+              stream.getTracks().forEach(t => t.stop());
+            }
           }
-          setRecordedBlobType(selectedMime);
-
-          const recorder = new MediaRecorder(stream, {
-            mimeType: MediaRecorder.isTypeSupported(selectedMime) ? selectedMime : undefined
-          });
-          
-          recorderRef.current = recorder;
-
-          recorder.ondataavailable = (e) => {
-            if (e.data && e.data.size > 0) {
-              chunksRef.current.push(e.data);
-            }
-          };
-
-          recorder.onstop = () => {
-            const finalBlob = new Blob(chunksRef.current, { type: selectedMime });
-            const videoUrl = URL.createObjectURL(finalBlob);
-            setRecordedVideoUrl(videoUrl);
-            setRecorderState('finished');
-            
-            // Auto trigger immediate file download
-            const a = document.createElement('a');
-            a.href = videoUrl;
-            a.download = `DKR_Loyalti_Promo_HD.${selectedMime.includes('mp4') ? 'mp4' : 'webm'}`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            
-            // Turn off screen sharing bar/activities immediately
-            if (streamRef.current) {
-              streamRef.current.getTracks().forEach(track => track.stop());
-              streamRef.current = null;
-            }
-          };
-
-          // Adjust state to recording
-          setRecorderState('recording');
-          
-          // Force playback restart from segment 1 to record from the very start!
-          setCurrentSegmentTime(0);
-          setCurrentWordIndex(-1);
-          setCurrentSegmentId(segments[0]?.id);
-          
-          recorder.start();
-
-          // Wait tiny delay so recorder catches frames
-          setTimeout(() => {
-            setIsPlaying(true);
-            speakSegment(segments[0]?.id);
-          }, 350);
         }
       }, 1000);
 
@@ -488,7 +513,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <button
               id="export-trigger-btn"
-              onClick={handleExportSimulate}
+              onClick={openExportHub}
               className="bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-slate-950 font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-1.5 transition-transform active:scale-95"
             >
               <Sparkles className="w-4 h-4 text-amber-900 fill-amber-900 animate-pulse" />
