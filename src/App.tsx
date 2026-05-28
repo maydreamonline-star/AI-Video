@@ -7,12 +7,13 @@ import { PromoStandee } from './components/PromoStandee';
 import { 
   Sparkles, Smartphone, Play, Pause, Save, HelpCircle, 
   Settings, CheckCircle, Volume2, Store, Printer, QrCode, Grid, ListCollapse,
-  Camera, AlertTriangle, Download, Info, Video, RefreshCw
+  Camera, AlertTriangle, Download, Info, Video, RefreshCw, Eye, EyeOff
 } from 'lucide-react';
 
 export default function App() {
   // Public Screen Sharing Focus Mode State
   const [isShareFocus, setIsShareFocus] = useState<boolean>(false);
+  const [hideExtraUI, setHideExtraUI] = useState<boolean>(false);
 
   // Config state
   const [config, setConfig] = useState<VideoConfig>({
@@ -561,28 +562,51 @@ export default function App() {
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-[120px] pointer-events-none" />
 
         {/* Floating Presentation Control Panel */}
-        <div className="w-full max-w-[350px] sm:max-w-[380px] mb-4 flex items-center justify-between z-10 bg-slate-900/90 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-2xl">
-          <div className="flex items-center gap-2">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-            </span>
-            <span className="text-xs font-black text-slate-200 tracking-wider uppercase font-mono">Pratinjau Publik (9:16)</span>
+        {!hideExtraUI ? (
+          <div className="w-full max-w-[350px] sm:max-w-[380px] mb-4 flex flex-col gap-2.5 z-10 bg-slate-900/90 backdrop-blur-md p-3.5 rounded-2xl border border-slate-800 shadow-2xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span className="text-xs font-black text-slate-200 tracking-wider uppercase font-mono">Presentasi Publik</span>
+              </div>
+              
+              <button
+                onClick={() => {
+                  pauseVideo();
+                  setIsShareFocus(false);
+                }}
+                className="bg-red-550/10 hover:bg-red-550/20 text-red-400 border border-red-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-lg active:scale-95 transition-all text-center"
+              >
+                Kembali
+              </button>
+            </div>
+            
+            <div className="flex gap-2 pt-1 border-t border-slate-800/60">
+              <button
+                onClick={() => setHideExtraUI(true)}
+                className="flex-1 bg-slate-800 hover:bg-slate-750 text-yellow-450 font-extrabold text-[10px] uppercase tracking-wider py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95"
+                title="Sembunyikan semua tombol & teks bantuan luar agar rekaman/share hanya fokus pada HP saja!"
+              >
+                <EyeOff className="w-3.5 h-3.5 text-yellow-400" />
+                <span>Sembunyikan Menu & Fokus Hanya HP</span>
+              </button>
+            </div>
           </div>
-          
+        ) : (
           <button
-            onClick={() => {
-              pauseVideo();
-              setIsShareFocus(false);
-            }}
-            className="bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 font-extrabold text-xs px-3.5 py-1.5 rounded-xl active:scale-95 transition-all flex items-center gap-1 shadow-sm"
+            onClick={() => setHideExtraUI(false)}
+            className="fixed bottom-4 right-4 z-50 bg-slate-900/40 hover:bg-slate-900 text-slate-500 hover:text-slate-200 border border-slate-800/40 p-2.5 rounded-xl text-[10px] font-bold tracking-wider uppercase backdrop-blur-xs transition-all shadow-xl opacity-15 hover:opacity-100 flex items-center justify-center gap-1.5"
           >
-            <span>✕ Keluar Mode Fokus</span>
+            <Eye className="w-4 h-4 text-emerald-400" />
+            <span>Tampilkan Menu</span>
           </button>
-        </div>
+        )}
 
-        {/* Smartphone Simulator Area (No wrapper panel clutter) */}
-        <div className="scale-100 sm:scale-[1.03] transition-transform duration-300 drop-shadow-[0_25px_60px_rgba(29,78,216,0.15)] z-10 my-1">
+        {/* Smartphone Simulator Area - Responsive mobile container */}
+        <div className="w-full max-w-[360px] sm:max-w-[380px] px-2 flex justify-center transition-transform duration-300 drop-shadow-[0_25px_60px_rgba(29,78,216,0.15)] z-10 my-1">
           <VideoPlayer
             segments={segments}
             config={config}
@@ -597,16 +621,6 @@ export default function App() {
             currentTime={currentSegmentTime}
             currentWordIndex={currentWordIndex}
           />
-        </div>
-
-        {/* Clean Sharing Helper Overlay */}
-        <div className="max-w-[350px] sm:max-w-[380px] w-full mt-4 bg-slate-905/65 backdrop-blur-md p-4 rounded-2xl border border-slate-800/80 text-center space-y-1.5 z-10 shadow-lg">
-          <p className="text-[11px] text-slate-300 leading-relaxed font-bold">
-            💡 Panduan Rekam / Share Screen Publik:
-          </p>
-          <p className="text-[10px] text-slate-400 leading-normal">
-            Saat masuk menu sharing browser (Share Screen), pilih menu <b>"Tab Chrome" (Chrome Tab)</b> lalu pilih tab ini. Perekam luar atau penonton konferensi Anda hanya akan melihat area video HP 9:16 yang bersih ini tanpa panel konfigurasi admin di sekitarnya!
-          </p>
         </div>
       </div>
     );

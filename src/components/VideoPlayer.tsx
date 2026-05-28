@@ -61,11 +61,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   };
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="flex flex-col items-center w-full">
       {/* 9:16 Vertical Smartphone Viewport */}
       <div 
         id="vertical-viewport-container"
-        className="relative w-[340px] h-[600px] sm:w-[360px] sm:h-[640px] rounded-[36px] bg-slate-950 shadow-2xl border-8 border-slate-800 overflow-hidden flex flex-col transition-all duration-300 ring-2 ring-blue-500/20"
+        className="relative w-full max-w-[360px] aspect-[9/16] rounded-[34px] sm:rounded-[36px] bg-slate-950 shadow-2xl border-6 sm:border-8 border-slate-800 overflow-hidden flex flex-col transition-all duration-300 ring-2 ring-blue-500/20"
         style={{ borderColor: '#1e293b' }}
       >
         {/* Decorative Smartphone Speaker & Sensor Notch */}
