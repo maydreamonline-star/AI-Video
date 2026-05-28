@@ -647,52 +647,6 @@ export default function App() {
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-[120px] pointer-events-none" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-[120px] pointer-events-none" />
 
-        {/* Floating Presentation Control Panel */}
-        {!hideExtraUI ? (
-          <div className="w-full max-w-[380px] sm:max-w-[420px] mb-2 flex flex-col gap-2 z-10 bg-slate-900/95 backdrop-blur-md p-3 rounded-2xl border border-slate-800 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span className="text-[11px] font-black text-slate-200 tracking-wider uppercase font-mono">Presentasi Publik</span>
-              </div>
-              
-              <button
-                onClick={() => {
-                  pauseVideo();
-                  setCurrentPath('/');
-                  window.location.hash = '';
-                  window.history.pushState(null, '', '/');
-                }}
-                className="bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-extrabold text-[10px] uppercase tracking-wider px-2.5 py-1 rounded-lg active:scale-95 transition-all text-center"
-              >
-                Kembali
-              </button>
-            </div>
-            
-            <div className="flex gap-1.5 pt-2 border-t border-slate-800/60">
-              <button
-                onClick={() => setHideExtraUI(true)}
-                className="flex-1 bg-slate-800 hover:bg-slate-750 text-yellow-400 font-extrabold text-[10px] uppercase tracking-wider py-1.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all active:scale-95"
-                title="Sembunyikan menu luar agar fokus hanya HP murni!"
-              >
-                <EyeOff className="w-3.5 h-3.5" />
-                <span>Sembunyikan Menu & Fokus HP Only</span>
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setHideExtraUI(false)}
-            className="fixed bottom-4 right-4 z-50 bg-slate-900/60 hover:bg-slate-900 text-slate-400 hover:text-slate-200 border border-slate-800/40 p-2.5 rounded-xl text-[10px] font-bold tracking-wider uppercase backdrop-blur-md transition-all shadow-xl opacity-20 hover:opacity-100 flex items-center justify-center gap-1.5 group"
-          >
-            <Eye className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" />
-            <span>Tampilkan Menu</span>
-          </button>
-        )}
-
         {/* Smartphone Simulator Area - Full-width scale responsive container */}
         <div className="w-full max-w-[380px] sm:max-w-[420px] px-3 flex justify-center transition-transform duration-300 drop-shadow-[0_25px_60px_rgba(29,78,216,0.18)] z-10 my-auto">
           <VideoPlayer
