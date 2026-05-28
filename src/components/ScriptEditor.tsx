@@ -423,53 +423,175 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
           <div className="h-[1px] bg-slate-800/50 my-2"></div>
 
           {/* Voice Text to Speech Customizer */}
-          <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-850">
-            <h4 className="text-xs font-bold uppercase text-yellow-500 tracking-widest mb-4 flex items-center gap-2">
+          <div className="bg-slate-950/40 p-5 rounded-2xl border border-slate-850 space-y-5">
+            <h4 className="text-xs font-bold uppercase text-yellow-500 tracking-widest mb-2 flex items-center gap-2">
               <Smile className="w-4 h-4" />
-              <span>Pengaturan Suara Wanita Pembawa Acara (Suara Kasir)</span>
+              <span>Pengaturan Suara Promosi (Mesin Audio TTS)</span>
             </h4>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-slate-300 text-[11px] font-semibold mb-1.5 flex justify-between">
-                  <span>Pilih Suara Sintetis (Web Speech API)</span>
-                  <span className="text-[10px] text-emerald-400 font-medium">Bhs. Indonesia disarankan</span>
-                </label>
-                <select
-                  value={config.selectedVoiceName}
-                  onChange={(e) => onConfigChange({ ...config, selectedVoiceName: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-400"
-                >
-                  {indonesianVoices.length > 0 ? (
-                    <optgroup label="Suara Bahasa Indonesia">
-                      {indonesianVoices.map(v => (
-                        <option key={v.name} value={v.name}>
-                          🇮🇩 {v.name} ({v.localService ? 'Offline' : 'Online'})
-                        </option>
-                      ))}
-                    </optgroup>
-                  ) : (
-                    <option value="">(Tidak ditemukan suara Bahasa Indonesia eksklusif, menggunakan sistem utama)</option>
-                  )}
-                  <optgroup label="Pilihan Suara Sistem Lain">
-                    {availableVoices
-                      .filter(v => !v.lang.toLowerCase().includes('id'))
-                      .slice(0, 15)
-                      .map(v => (
-                        <option key={v.name} value={v.name}>
-                          🌐 {v.name} ({v.lang})
-                        </option>
-                      ))}
-                  </optgroup>
-                </select>
-                <p className="text-[10px] text-slate-500 mt-1.5 leading-tight">
-                  ℹ️ Web Speech API memuat suara yang terpasang di Google Chrome / Browser HP Kakak secara lokal. Kami menyaring otomatis untuk suara Bahasa Indonesia.
-                </p>
+            {/* Engine Selection Badges */}
+            <div>
+              <label className="block text-slate-300 text-[11px] font-semibold mb-2">
+                Pilih Mesin Sintesis Suara (TTS Engine)
+              </label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {[
+                  {
+                    id: 'cloud-google',
+                    name: '☁️ Cloud Gratis (Sangat Disarankan)',
+                    desc: 'Suara stabil, sangat natural, & konsisten sama di semua Android/HP!'
+                  },
+                  {
+                    id: 'cloud-elevenlabs',
+                    name: '✨ ElevenLabs Premium',
+                    desc: 'Suara paling natural di dunia (Butuh API Key ElevenLabs).'
+                  },
+                  {
+                    id: 'browser-native',
+                    name: '📱 Browser Lokal Bawaan',
+                    desc: 'Menggunakan mesin suara lokal HP/Chrome secara offline.'
+                  }
+                ].map((engine) => (
+                  <button
+                    key={engine.id}
+                    type="button"
+                    onClick={() => onConfigChange({ ...config, ttsEngine: engine.id as any })}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      config.ttsEngine === engine.id
+                        ? 'bg-yellow-500/10 border-yellow-400 text-white font-bold'
+                        : 'bg-slate-900/60 border-slate-800 text-slate-400 hover:border-slate-750'
+                    }`}
+                  >
+                    <p className="text-[11px] font-bold text-slate-200">{engine.name}</p>
+                    <p className="text-[9px] text-slate-400 mt-1 leading-tight">{engine.desc}</p>
+                  </button>
+                ))}
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
+              {/* Conditional Panel depending on chosen Engine */}
+              {config.ttsEngine === 'browser-native' && (
+                <div>
+                  <label className="block text-slate-300 text-[11px] font-semibold mb-1.5 flex justify-between">
+                    <span>Pilih Suara Lokal (Web Speech API)</span>
+                    <span className="text-[10px] text-emerald-400 font-medium">Bhs. Indonesia disarankan</span>
+                  </label>
+                  <select
+                    value={config.selectedVoiceName}
+                    onChange={(e) => onConfigChange({ ...config, selectedVoiceName: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-400"
+                  >
+                    {indonesianVoices.length > 0 ? (
+                      <optgroup label="Suara Bahasa Indonesia">
+                        {indonesianVoices.map(v => (
+                          <option key={v.name} value={v.name}>
+                            🇮🇩 {v.name} ({v.localService ? 'Offline' : 'Online'})
+                          </option>
+                        ))}
+                      </optgroup>
+                    ) : (
+                      <option value="">(Tidak ditemukan suara Bahasa Indonesia eksklusif, menggunakan sistem utama)</option>
+                    )}
+                    <optgroup label="Pilihan Suara Sistem Lain">
+                      {availableVoices
+                        .filter(v => !v.lang.toLowerCase().includes('id'))
+                        .slice(0, 15)
+                        .map(v => (
+                          <option key={v.name} value={v.name}>
+                            🌐 {v.name} ({v.lang})
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                  <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                    ℹ️ Web Speech API memuat filter suara lokal di Google Chrome / Safari HP Kakak. Beberapa browser versi lama mungkin memutar suara yang berbeda-beda.
+                  </p>
+                </div>
+              )}
+
+              {config.ttsEngine === 'cloud-google' && (
+                <div className="bg-slate-900/40 p-4 rounded-xl border border-slate-800 flex flex-col justify-between">
+                  <div>
+                    <span className="inline-block bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded mb-2">
+                      Aktif & Siap Pakai
+                    </span>
+                    <h5 className="text-xs font-bold text-slate-200">Google Cloud TTS</h5>
+                    <p className="text-[11px] text-slate-400 mt-1 leading-relaxed">
+                      Sintesis suara ini gratis dan otomatis berjalan di server aman kami. Karakter suara perempuan Bahasa Indonesia sangat ramah, santun, dan konsisten di semua merk HP (Samsung, Xiaomi, Oppo, iPhone, dll).
+                    </p>
+                  </div>
+                  <p className="text-[9.5px] text-yellow-500/80 font-medium mt-2">
+                    ✓ Tanpa Akun, Tanpa API Key, & 100% Gratis Selamanya!
+                  </p>
+                </div>
+              )}
+
+              {config.ttsEngine === 'cloud-elevenlabs' && (
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-slate-300 text-[11px] font-semibold mb-1">
+                      Pilih Karakter ElevenLabs Premium
+                    </label>
+                    <select
+                      value={config.elevenlabsVoiceId}
+                      onChange={(e) => onConfigChange({ ...config, elevenlabsVoiceId: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-400"
+                    >
+                      <option value="pMs2g89czi6b37F7ThPh">👩 Serena (Cepat & Sempurna untuk Promosi / Cantik)</option>
+                      <option value="21m00Tcm4TlvDq8ikWAM">👩 Rachel (Suara Hangat & Conversational/Ramah)</option>
+                      <option value="z9fAnlkFmRtoYnmscvM9">👩 Glinda (Ceria & Menginspirasi/Ekspresif)</option>
+                      <option value="pi3mW81K7K1K7Y1aYtRT">👩 Nicole (Tenang, Lembut, & Terbuka)</option>
+                      <option value="pNInz6obpg7AN6Zg7pZ6">👨 Adam (Pria Professional / Suara Deep Reklame)</option>
+                      <option value="ErXwobaY60t9iRQudcoT">👨 Antoni (Pria Berwibawa & Kuat)</option>
+                      <option value="custom">👤 Custom Voice ID (Masukkan Manual di Bawah)</option>
+                    </select>
+                  </div>
+
+                  {config.elevenlabsVoiceId === 'custom' && (
+                    <div>
+                      <label className="block text-slate-400 text-[10px] font-medium mb-1">
+                        Masukkan Custom ElevenLabs Voice ID
+                      </label>
+                      <input
+                        type="text"
+                        value={config.elevenlabsVoiceId || ''}
+                        onChange={(e) => onConfigChange({ ...config, elevenlabsVoiceId: e.target.value })}
+                        placeholder="contoh: I6ZsnIqFf4g54CscX6tS"
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-slate-300 text-[11px] font-semibold mb-1 flex justify-between font-sans">
+                      <span>ElevenLabs API Key (xi-api-key)</span>
+                      <a
+                        href="https://elevenlabs.io"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-yellow-400 text-[9px] hover:underline"
+                      >
+                        Daftar ElevenLabs Gratis →
+                      </a>
+                    </label>
+                    <input
+                      type="password"
+                      value={config.elevenlabsApiKey || ''}
+                      onChange={(e) => onConfigChange({ ...config, elevenlabsApiKey: e.target.value })}
+                      placeholder="Masukkan API Key (Kerahasiaan terjaga di server)"
+                      className="w-full bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-yellow-400 font-mono"
+                    />
+                    <p className="text-[9px] text-slate-550 mt-1">
+                      ℹ️ ElevenLabs menyediakan 10.000 karakter gratis per bulan. API Key ini aman diproses di backend server proxy kami.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-3">
                 <div>
-                  <div className="flex justify-between items-center mb-1 text-[11px] font-semibold text-slate-300">
+                  <div className="flex justify-between items-center mb-1 text-[11px] font-semibold text-slate-300 font-sans">
                     <span>Tinggi Nada Suara (Pitch)</span>
                     <span className="text-yellow-400 font-mono text-[10px]">{config.voicePitch.toFixed(1)}x</span>
                   </div>
@@ -479,17 +601,21 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
                     max="1.8"
                     step="0.1"
                     value={config.voicePitch}
+                    disabled={config.ttsEngine !== 'browser-native'}
                     onChange={(e) => onConfigChange({ ...config, voicePitch: parseFloat(e.target.value) })}
-                    className="w-full accent-yellow-400 h-1 bg-slate-800 rounded-full"
+                    className={`w-full accent-yellow-400 h-1 bg-slate-800 rounded-full ${config.ttsEngine !== 'browser-native' ? 'opacity-30 cursor-not-allowed' : ''}`}
                   />
                   <div className="flex justify-between text-[8px] text-slate-500">
                     <span>Berat/Ngebass</span>
-                    <span>Tinggi/Perempuan Cempreng</span>
+                    <span className="text-right">Tinggi/Perempuan Cempreng</span>
                   </div>
+                  {config.ttsEngine !== 'browser-native' && (
+                    <p className="text-[8px] text-slate-500 mt-0.5">ℹ️ Pitch hanya didukung pada mesin browser lokal bawaan.</p>
+                  )}
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-1 text-[11px] font-semibold text-slate-300">
+                  <div className="flex justify-between items-center mb-1 text-[11px] font-semibold text-slate-300 font-sans">
                     <span>Kecepatan Berbicara (Rate)</span>
                     <span className="text-yellow-400 font-mono text-[10px]">{config.voiceRate.toFixed(1)}x</span>
                   </div>
@@ -504,7 +630,7 @@ export const ScriptEditor: React.FC<ScriptEditorProps> = ({
                   />
                   <div className="flex justify-between text-[8px] text-slate-500">
                     <span>Lambat & Santai</span>
-                    <span>Cepat & Padat</span>
+                    <span className="text-right">Cepat & Padat</span>
                   </div>
                 </div>
               </div>

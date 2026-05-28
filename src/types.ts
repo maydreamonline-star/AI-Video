@@ -19,6 +19,9 @@ export interface VideoConfig {
   accentColor: string;
   captionStyle: 'tiktok-yellow' | 'modern-white' | 'bold-caps' | 'gradient-bg';
   cameraOverlay: boolean; // Enables live camcorder vintage UI borders and REC indicators
+  ttsEngine: 'browser-native' | 'cloud-google' | 'cloud-elevenlabs';
+  elevenlabsApiKey?: string;
+  elevenlabsVoiceId?: string;
 }
 
 export interface PromotionalTemplate {
