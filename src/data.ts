@@ -1,4 +1,6 @@
 import { PromotionalTemplate } from './types';
+import cashierAvatar from './assets/images/dkr_cashier_avatar_1779933424123.png';
+import loyaltyQrFlyer from './assets/images/dkr_loyalty_qr_flyer_1779933446873.png';
 
 export const templates: PromotionalTemplate[] = [
   {
@@ -158,8 +160,8 @@ export const templates: PromotionalTemplate[] = [
 ];
 
 export const defaultImages = {
-  cashier: '/src/assets/images/dkr_cashier_avatar_1779933424123.png',
-  flyer: '/src/assets/images/dkr_loyalty_qr_flyer_1779933446873.png'
+  cashier: cashierAvatar,
+  flyer: loyaltyQrFlyer
 };
 
 export const sampleProducts = [
