@@ -1,0 +1,6 @@
+{
+  "name": "DKR Loyalty Video Creator",
+  "description": "Alat pembuat video promosi Program Loyalitas DKR format 9:16 vertikal dengan sulih suara bahasa Indonesia, transkrip otomatis, dan QR Code interaktif.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
